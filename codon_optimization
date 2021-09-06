@@ -31,13 +31,13 @@ print(original_seq)
 problem = DnaOptimizationProblem(
     sequence = original_seq, # codon optimization하고자하는 fasta file
     constraints=[
-        EnforceGCContent(mini=0.4, maxi=0.6, window=50),
-        AvoidPattern("SgsI_site"),
+        EnforceGCContent(mini=0.4, maxi=0.6, window=50), # GC contents 40%-60%
+        AvoidPattern("SgsI_site"), # 특정 enzyme site를 피하고자 할 경우
         AvoidPattern("PacI_site"),
-        AvoidHairpins(),
-        AvoidStopCodons(),
-        AvoidRareCodons(min_frequency=0.2, codon_usage_table=table),
-        UniquifyAllKmers(8)
+        AvoidHairpins(), # hairpin 방지
+        AvoidStopCodons(), # 중간 부분의 stop codon 방지
+        AvoidRareCodons(min_frequency=0.2, codon_usage_table=table), # gBlock 합성에 문제있을경우 min_frequency를 낮추는 것도 방법이 될 수 있음.
+        UniquifyAllKmers(8) # repeated region 방지
     ],
     objectives=[CodonOptimize(method='use_best_codon', codon_usage_table=table)]
 )
