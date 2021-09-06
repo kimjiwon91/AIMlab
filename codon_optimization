@@ -1,0 +1,66 @@
+# 작성자 김지원
+
+# DNA CHISEL 모듈을 기반으로 여러 모듈을 접목시켰음.
+# https://edinburgh-genome-foundry.github.io/DnaChisel/index.html
+
+# codon usage table loading 을 위한 package
+import python_codon_tables as pct
+
+# codon optimization을 위한 package
+from dnachisel import *
+from Bio import SeqIO
+import pdf_reports
+import zipfile
+import os
+
+# 패키지 내에 기존 저장된 codon table 확인
+# print (pct.available_codon_tables_names) # 해당 목록 안에 있으면 taxid를 이용하지 않아도 상관없음.
+
+# taxid로 codon table을 가져오는 경우
+table = pct.get_codons_table(381666) 
+  # 284591 = Yarrowia lipolytica CLIB122
+  # 381666 = Cupriavidus necator H16
+print(table)
+
+# taxid id는 NCBI taxonomy browser에서 가져올 것.
+# https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=info&id=4932
+
+# codon optimzation을 원하는 파일이 local에 있을 경우
+original_seq = SeqIO.read('xyla_hs.fasta',"fasta") #jupyter notebook 파일과 같은 위치에 존재하는 fasta file
+print(original_seq)
+problem = DnaOptimizationProblem(
+    sequence = original_seq, # codon optimization하고자하는 fasta file
+    constraints=[
+        EnforceGCContent(mini=0.4, maxi=0.6, window=50),
+        AvoidPattern("SgsI_site"),
+        AvoidPattern("PacI_site"),
+        AvoidHairpins(),
+        AvoidStopCodons(),
+        AvoidRareCodons(min_frequency=0.2, codon_usage_table=table),
+        UniquifyAllKmers(8)
+    ],
+    objectives=[CodonOptimize(method='use_best_codon', codon_usage_table=table)]
+)
+# https://edinburgh-genome-foundry.github.io/DnaChisel/ref/builtin_specifications.html 참고
+
+# SOLVE THE CONSTRAINTS, OPTIMIZE WITH RESPECT TO THE OBJECTIVE
+problem.resolve_constraints()
+problem.optimize()
+
+# PRINT SUMMARIES TO CHECK THAT CONSTRAINTS PASS
+print(problem.constraints_text_summary())
+print(problem.objectives_text_summary())
+
+# optimization 완료 파일은 zip file로 형성
+problem.optimize_with_report(target="report.zip") 
+
+# 압축파일 해제
+with zipfile.ZipFile("report.zip", mode='r') as zip_ref:
+    zip_ref.extractall()
+
+# gb file to fasta file format
+with open("final_sequence.gb", "rU") as input_handle:
+    with open("final_sequence.fasta", "w") as output_handle:
+        sequences = SeqIO.parse(input_handle, "genbank")
+        count = SeqIO.write(sequences, output_handle, "fasta")
+print("Converted %i records" % count)
