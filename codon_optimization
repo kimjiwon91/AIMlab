@@ -1,47 +1,76 @@
-# 작성자 김지원
+# Codon optimization code from Jiwon Kim
+# AIM lab in KIST (Korea Institute of Science and Technology)
 
-# DNA CHISEL 모듈을 기반으로 여러 모듈을 접목시켰음.
-# https://edinburgh-genome-foundry.github.io/DnaChisel/index.html
+# original code from DNA CHISEL
+# link: https://edinburgh-genome-foundry.github.io/DnaChisel/index.html
 
-# codon usage table loading 을 위한 package
+# package for codon usage table loading
 import python_codon_tables as pct
 
-# codon optimization을 위한 package
+# package for codon optimization
 from dnachisel import *
 from Bio import SeqIO
 import pdf_reports
 import zipfile
 import os
 
-# 패키지 내에 기존 저장된 codon table 확인
-# print (pct.available_codon_tables_names) # 해당 목록 안에 있으면 taxid를 이용하지 않아도 상관없음.
+# check codon usage table in pct package
+# print (pct.available_codon_tables_names)
 
-# taxid로 codon table을 가져오는 경우
+# import codon usage table from NCBI taxid
 table = pct.get_codons_table(381666) 
   # 284591 = Yarrowia lipolytica CLIB122
   # 381666 = Cupriavidus necator H16
 print(table)
 
-# taxid id는 NCBI taxonomy browser에서 가져올 것.
+# type codon usage table
+#table = {'*': {'TAA': 1.00},
+#         'A': {'GCA': 0.21, 'GCC': 0.42, 'GCG': 0.14 'GCT': 0.23},
+#         'C': {'TGC': 0.57, 'TGT': 0.43},
+#         'D': {'GAC': 0.37, 'GAT': 0.63},
+#         'E': {'GAA': 0.88, 'GAG': 0.12},
+#         'F': {'TTC': 0.46, 'TTT': 0.54},
+#         'G': {'GGA': 0.22, 'GGC': 0.41, 'GGG': 0.15, 'GGT': 0.22},
+#         'H': {'CAC': 0.33, 'CAT': 0.67},
+#         'I': {'ATA': 0.13, 'ATC': 0.48, 'ATT': 0.39},
+#         'K': {'AAA': 0.65, 'AAG': 0.35},
+#         'L': {'CTA': 0.02, 'CTC': 0.20, 'CTG': 0.46, 'CTT': 0.12,
+#              'TTA': 0.09, 'TTG': 0.11},
+#         'M': {'ATG': 1.00},
+#         'N': {'AAC': 0.37, 'AAT': 0.63},
+#         'P': {'CCA': 0.12, 'CCC': 0.26, 'CCG': 0.44, 'CCT': 0.19},
+#         'Q': {'CAA': 0.17, 'CAG': 0.83},
+#         'R': {'AGA': 0.07, 'AGG': 0.05, 'CGA': 0.04, 'CGC': 0.31,
+#              'CGG': 0.32, 'CGT': 0.21},
+#         'S': {'AGC': 0.21, 'AGT': 0.16, 'TCA': 0.09, 'TCC': 0.23,
+#              'TCG': 0.15, 'TCT': 0.16},
+#         'T': {'ACA': 0.23, 'ACC': 0.26, 'ACG': 0.39, 'ACT': 0.12},
+#         'V': {'GTA': 0.26, 'GTC': 0.41, 'GTG': 0.16, 'GTT': 0.17},
+#         'W': {'TGG': 1.00},
+#         'Y': {'TAC': 0.33, 'TAT': 0.67}
+#        }
+
+
+# taxid id: NCBI taxonomy browser search
 # https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=info&id=4932
 
-# codon optimzation을 원하는 파일이 local에 있을 경우
-original_seq = SeqIO.read('xyla_hs.fasta',"fasta") #jupyter notebook 파일과 같은 위치에 존재하는 fasta file
+# codon optimzation: local file
+original_seq = SeqIO.read('xyla_hs.fasta',"fasta") # type your file
 print(original_seq)
 problem = DnaOptimizationProblem(
     sequence = original_seq, # codon optimization하고자하는 fasta file
     constraints=[
         EnforceGCContent(mini=0.4, maxi=0.6, window=50), # GC contents 40%-60%
-        AvoidPattern("SgsI_site"), # 특정 enzyme site를 피하고자 할 경우
+        AvoidPattern("SgsI_site"),
         AvoidPattern("PacI_site"),
-        AvoidHairpins(), # hairpin 방지
-        AvoidStopCodons(), # 중간 부분의 stop codon 방지
-        AvoidRareCodons(min_frequency=0.2, codon_usage_table=table), # gBlock 합성에 문제있을경우 min_frequency를 낮추는 것도 방법이 될 수 있음.
-        UniquifyAllKmers(8) # repeated region 방지
+        AvoidHairpins(),
+        AvoidStopCodons(),
+        AvoidRareCodons(min_frequency=0.2, codon_usage_table=table),
+        UniquifyAllKmers(8)
     ],
     objectives=[CodonOptimize(method='use_best_codon', codon_usage_table=table)]
 )
-# https://edinburgh-genome-foundry.github.io/DnaChisel/ref/builtin_specifications.html 참고
+# To know package details, check link: https://edinburgh-genome-foundry.github.io/DnaChisel/ref/builtin_specifications.html
 
 # SOLVE THE CONSTRAINTS, OPTIMIZE WITH RESPECT TO THE OBJECTIVE
 problem.resolve_constraints()
@@ -51,10 +80,8 @@ problem.optimize()
 print(problem.constraints_text_summary())
 print(problem.objectives_text_summary())
 
-# optimization 완료 파일은 zip file로 형성
+# optimization report
 problem.optimize_with_report(target="report.zip") 
-
-# 압축파일 해제
 with zipfile.ZipFile("report.zip", mode='r') as zip_ref:
     zip_ref.extractall()
 
