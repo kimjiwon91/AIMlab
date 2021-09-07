@@ -23,7 +23,7 @@ table = pct.get_codons_table(381666)
   # 381666 = Cupriavidus necator H16
 print(table)
 
-# type codon usage table
+# if you want to type codon usage table, you can use the format below.
 #table = {'*': {'TAA': 1.00},
 #         'A': {'GCA': 0.21, 'GCC': 0.42, 'GCG': 0.14, 'GCT': 0.23},
 #         'C': {'TGC': 0.57, 'TGT': 0.43},
