@@ -25,7 +25,7 @@ print(table)
 
 # type codon usage table
 #table = {'*': {'TAA': 1.00},
-#         'A': {'GCA': 0.21, 'GCC': 0.42, 'GCG': 0.14 'GCT': 0.23},
+#         'A': {'GCA': 0.21, 'GCC': 0.42, 'GCG': 0.14, 'GCT': 0.23},
 #         'C': {'TGC': 0.57, 'TGT': 0.43},
 #         'D': {'GAC': 0.37, 'GAT': 0.63},
 #         'E': {'GAA': 0.88, 'GAG': 0.12},
